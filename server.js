@@ -10,6 +10,7 @@ mongoose.connect('mongodb://localhost/favorite-places');
 
 
 var app = express();
+app.use(express.static(__dirname+"/public"));
 app.use(bodyParser.json());
 
 app.post('/api/users', function(req, res) {
@@ -70,7 +71,12 @@ app.post('/api/places', function(req, res) {
 });
 
 app.get('/api/places', function(req, res) {
-	Place.find().exec().then(function(places) {
+	Place
+	.find()
+	.sort('state')
+	.limit(10)
+	.skip(req.query.skip || 0)
+	.exec().then(function(places) {
 		return res.json(places);
 	});
 });

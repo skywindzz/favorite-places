@@ -1,0 +1,45 @@
+<div>
+	<div class="pull-right">
+		<button ng-disabled="skip_places == 0" class="btn btn-success" ng-click="prevPage()">Prev Page</button>
+		<button ng-disabled="places.length < limit" class="btn btn-success" ng-click="nextPage()">Next Page</button>
+	</div>
+	<div ng-repeat="place in places | orderBy:'state'">
+		<h3>{{place.name}}</h3>
+		<div class="row">
+			<div class="col-sm-6"><strong>Address:</strong></div>
+			<div class="col-sm-6">{{place.address}}</div>
+		</div>
+		<div class="row">
+			<div class="col-sm-6"><strong>City:</strong></div>
+			<div class="col-sm-6">{{place.city}}</div>
+		</div>
+		<div class="row">
+			<div class="col-sm-6"><strong>State:</strong></div>
+			<div class="col-sm-6">{{place.state}}</div>
+		</div>
+	</div>
+	<div>
+		<h3>New Place!</h3>
+		<div class="row">
+			<div class="col-sm-4"><strong>Name:</strong></div>
+			<div class="col-sm-6"><input ng-model="newPlace.name" /></div>
+		</div>
+		<div class="row">
+			<div class="col-sm-4"><strong>Address:</strong></div>
+			<div class="col-sm-6"><input ng-model="newPlace.address" /></div>
+		</div>
+		<div class="row">
+			<div class="col-sm-4"><strong>City:</strong></div>
+			<div class="col-sm-6"><input ng-model="newPlace.city" /></div>
+		</div>
+		<div class="row">
+			<div class="col-sm-4"><strong>State:</strong></div>
+			<div class="col-sm-6"><input ng-model="newPlace.state" /></div>
+		</div>
+		<div class="row">
+			<div class="col-sm-4"><strong>Zip:</strong></div>
+			<div class="col-sm-6"><input ng-model="newPlace.zip" /></div>
+		</div>
+		<button class="btn btn-primary" ng-click="clickAdd()">Add Place</button>
+	</div>
+</div>
