@@ -1,0 +1,23 @@
+<div>
+	<h3>Log in!</h3>
+	<div class="text-danger"><strong>{{error}}</strong></div>
+	<form>
+		<div class="row">
+			<div class="col-sm-3">
+				Email:
+			</div>
+			<div class="col-sm-9">
+				<input type="email" ng-model="email" />
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-sm-3">
+				Password:
+			</div>
+			<div class="col-sm-9">
+				<input type="password" ng-model="password" />
+			</div>
+		</div>
+		<button type="submit" ng-click="clickLogin()" class="btn btn-primary">Log in!</button>
+	</form>
+</div>

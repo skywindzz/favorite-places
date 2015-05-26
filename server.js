@@ -1,26 +1,75 @@
 var mongoose = require('mongoose');
 var express = require('express');
 var bodyParser = require('body-parser');
+var passport = require('passport');
+var session = require('express-session');
+var LocalStrategy = require('passport-local').Strategy;
 
 var Place = require('./models/Place');
 var User = require('./models/User');
 
+passport.use(new LocalStrategy({
+	usernameField: 'email'
+}, function(email, password, done) {
+	//define how we match user credentials to db values
+	User.findOne({ email: email }, function(err, user){
+		if (!user) {
+			done(new Error("This user does not exist :)"));
+		}
+		user.verifyPassword(password).then(function(doesMatch) {
+			if (doesMatch) {
+				done(null, user);
+			}
+			else {
+				done(new Error("Please verify your password and try again :)"));
+			}
+		});
+	});
+}));
+
+passport.serializeUser(function(user, done) {
+  done(null, user._id);
+});
+
+passport.deserializeUser(function(id, done) {
+  User.findById(id, function (err, user) {
+    done(err, user);
+  });
+});
 
 mongoose.connect('mongodb://localhost/favorite-places');
 
 
 var app = express();
+app.use(session({secret: 'fav places are awesome'}))
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(express.static(__dirname+"/public"));
 app.use(bodyParser.json());
 
 app.post('/api/users', function(req, res) {
-	var user = new User(req.body);
-	user.save(function(err, new_user) {
-		if (err) {
-			console.log("can't create user", err);
+	User.findOne({ email: req.body.email }).exec().then(function(user) {
+		//if we found a user, it's a duplicate
+		if (user) {
+			return res.status(400).json({message: "User with this email already exists :)"});
 		}
-		res.json(new_user);
-	});
+		//if the user's password is too short ...
+		if (req.body.password.length <= 2) {
+			return res.status(400).json({message: "Your password must be longer than two characters :)"});
+		}
+		//otherwise, create the user
+		var user = new User(req.body);
+		user.save(function(err, new_user) {
+			if (err) {
+				console.log("can't create user", err);
+			}
+			res.json(new_user);
+		});
+	})
+});
+
+app.post('/api/users/auth', passport.authenticate('local', { failureRedirect: '/login' }), function(req, res) {
+	return res.json({message: "you logged in"});
 });
 
 app.post('/api/users/:userId/favorite_places', function(req, res) {

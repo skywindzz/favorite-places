@@ -9,6 +9,12 @@ app.config(function($routeProvider) {
 				return PlacesService.getPlaces();
 			}
 		}
+	}).when('/signup', {
+		templateUrl: '/templates/signup.html',
+		controller: 'SignupCtrl'
+	}).when('/login', {
+		templateUrl: '/templates/login.html',
+		controller: 'LoginCtrl'
 	}).otherwise({
 		redirectTo: '/places'
 	});
