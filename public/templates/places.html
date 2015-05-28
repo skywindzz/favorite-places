@@ -1,5 +1,8 @@
 <div>
 	<div class="pull-right">
+		<a href="/api/auth/logout">Logout</a>
+	</div>
+	<div class="pull-right">
 		<button ng-disabled="skip_places == 0" class="btn btn-success" ng-click="prevPage()">Prev Page</button>
 		<button ng-disabled="places.length < limit" class="btn btn-success" ng-click="nextPage()">Next Page</button>
 	</div>
@@ -17,6 +20,7 @@
 			<div class="col-sm-6"><strong>State:</strong></div>
 			<div class="col-sm-6">{{place.state}}</div>
 		</div>
+		<button ng-click="addFavorite(place)">Favorite</button>
 	</div>
 	<div>
 		<h3>New Place!</h3>

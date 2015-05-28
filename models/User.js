@@ -6,6 +6,11 @@ var q = require('q');
 var userSchema = new Schema({
 	name: String,
 	email: { type: String, unique: true },
+	twitter: { 
+		id:  { type: String, unique: true },
+		token: String,
+		tokenSecret: String
+	},
 	password: String,
 	favorite_places: [{type: Schema.Types.ObjectId, ref: 'Place'}]//referenced model
 });

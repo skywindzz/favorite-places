@@ -25,4 +25,10 @@ angular.module('FavoritePlaces').controller('PlacesCtrl', function($scope, Place
 			$scope.places.push(place);
 		});
 	};
+
+	$scope.addFavorite = function(place) {
+		PlacesService.addFavorite(place).then(function() {
+			//
+		});
+	};
 });

@@ -30,4 +30,16 @@ angular.module('FavoritePlaces').service('PlacesService', function($http, $q) {
 		});
 		return deferred.promise;
 	};
+
+	this.addFavorite = function(place) {
+		var deferred = $q.defer();
+		$http({
+			method: 'POST',
+			url: '/api/users/me/favorite_places',
+			data: place
+		}).then(function(response) {
+			deferred.resolve(response.data);
+		});
+		return deferred.promise;
+	};
 });

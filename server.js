@@ -4,9 +4,12 @@ var bodyParser = require('body-parser');
 var passport = require('passport');
 var session = require('express-session');
 var LocalStrategy = require('passport-local').Strategy;
+var TwitterStrategy = require('passport-twitter').Strategy;
 
 var Place = require('./models/Place');
 var User = require('./models/User');
+
+mongoose.connect('mongodb://localhost/favorite-places');
 
 passport.use(new LocalStrategy({
 	usernameField: 'email'
@@ -27,6 +30,31 @@ passport.use(new LocalStrategy({
 	});
 }));
 
+passport.use(new TwitterStrategy({
+	consumerKey: 'qgT3gYCqZCTbyL5EVzcOMVL8R',
+	consumerSecret: 'Qkp6wOagy4pnC87kjBlwEAbFQstLrlFADvpitZ4tYNdc9UjE7G',
+	callbackUrl: 'http://localhost:8080/api/auth/twitter/callback'
+}, function(token, tokenSecret, profile, done) {
+	console.log(profile);
+	User.findOne({ 'twitter.id': profile.id }, function(err, user){
+		if (!user) {
+			var user = new User();
+			user.name = profile.displayName;
+			user.twitter.id = profile.id;
+			user.twitter.token = token;
+			user.twitter.tokenSecret = tokenSecret;
+			user.save(function(err, new_user) {
+				if (err) {
+					console.log("can't create user", err);
+				}
+				done(null, new_user);
+			});
+		}
+		//check to see if token/tokenSecret have changed and save if necessary
+		done(null, user);
+	});
+}));
+
 passport.serializeUser(function(user, done) {
   done(null, user._id);
 });
@@ -37,11 +65,24 @@ passport.deserializeUser(function(id, done) {
   });
 });
 
-mongoose.connect('mongodb://localhost/favorite-places');
+var requireAuth = function(req, res, next) {
+	if (!req.isAuthenticated()) {
+		return res.status(401).end();
+	}
+	console.log(req.user);
+	next();
+};
 
+// if we stored "is_admin" on the user model, we could also limit access to endpoints for admin only
+// var requireAdmin = function(req, res, next) {
+// 	if (!req.user.is_admin) {
+// 		return res.status(401).end();
+// 	}
+// 	next();
+// }
 
 var app = express();
-app.use(session({secret: 'fav places are awesome'}))
+app.use(session({secret: 'fav places are awesome', cookie: { maxAge: 60000 }}))
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(__dirname+"/public"));
@@ -72,14 +113,25 @@ app.post('/api/users/auth', passport.authenticate('local', { failureRedirect: '/
 	return res.json({message: "you logged in"});
 });
 
-app.post('/api/users/:userId/favorite_places', function(req, res) {
+app.get('/api/auth/twitter', passport.authenticate('twitter'));
+app.get('/api/auth/twitter/callback', passport.authenticate('twitter', { 
+	failureRedirect: '/#login', 
+	successRedirect: '/#places' 
+}));
+
+app.get('/api/auth/logout', function(req, res) {
+	req.logout();
+	return res.redirect('/#login');
+});
+
+app.post('/api/users/me/favorite_places', requireAuth, function(req, res) {
 	//grab the place
 	Place.findOne({ _id: req.body._id }).exec().then(function(place) {
 		if (!place) {
 			return res.status(404).end();
 		}
 		//update the user with the favorite_place
-		User.findOne({ _id: req.params.userId }).exec().then(function(user) {
+		User.findOne({ _id: req.user._id }).exec().then(function(user) {
 			user.favorite_places.push(place);
 			user.save(function(err) {
 				if (err) {
@@ -91,7 +143,16 @@ app.post('/api/users/:userId/favorite_places', function(req, res) {
 	});
 });
 
-app.get('/api/users', function(req, res) {
+app.get('/api/users/me', requireAuth, function(req, res) {
+	User
+	.findOne({_id: req.user.id})
+	.populate('favorite_places')
+	.exec().then(function(user) {
+		return res.json(user);
+	});
+});
+
+app.get('/api/users', requireAuth, function(req, res) {
 	User
 	.find()
 	.populate('favorite_places')
@@ -100,7 +161,7 @@ app.get('/api/users', function(req, res) {
 	});
 });
 
-app.delete('/api/users/:userId', function(req, res) {
+app.delete('/api/users/:userId', requireAuth, function(req, res) {
 	User.remove({ _id: req.params.userId }, function(err) {
 		if (err) {
 			console.log("can't delete user", err);
@@ -109,7 +170,7 @@ app.delete('/api/users/:userId', function(req, res) {
 	});
 });
 
-app.post('/api/places', function(req, res) {
+app.post('/api/places', requireAuth, function(req, res) {
 	var place = new Place(req.body);
 	place.save(function(err, new_place) {
 		if (err) {
@@ -119,7 +180,7 @@ app.post('/api/places', function(req, res) {
 	});
 });
 
-app.get('/api/places', function(req, res) {
+app.get('/api/places', requireAuth, function(req, res) {
 	Place
 	.find()
 	.sort('state')
@@ -130,7 +191,7 @@ app.get('/api/places', function(req, res) {
 	});
 });
 
-app.put('/api/places/:placeId', function(req, res) {
+app.put('/api/places/:placeId', requireAuth, function(req, res) {
 	Place.update(req.body, function(err) {
 		if (err) {
 			console.log("can't update place", err);
@@ -139,7 +200,7 @@ app.put('/api/places/:placeId', function(req, res) {
 	});
 });
 
-app.delete('/api/places/:placeId', function(req, res) {
+app.delete('/api/places/:placeId', requireAuth, function(req, res) {
 	Place.remove({ _id: req.params.placeId }, function(err) {
 		if (err) {
 			console.log("can't delete place", err);

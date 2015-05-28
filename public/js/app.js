@@ -1,6 +1,6 @@
 var app = angular.module('FavoritePlaces', ['ngRoute']);
 
-app.config(function($routeProvider) {
+app.config(function($routeProvider, $httpProvider) {
 	$routeProvider.when('/places', {
 		templateUrl: '/templates/places.html',
 		controller: 'PlacesCtrl',
@@ -17,5 +17,16 @@ app.config(function($routeProvider) {
 		controller: 'LoginCtrl'
 	}).otherwise({
 		redirectTo: '/places'
+	});
+
+	$httpProvider.interceptors.push(function($location) {
+		return {
+			'responseError': function(res) {
+				if (res.status === 401) {
+					$location.path('/login');
+				}
+				return res;
+			}
+		}
 	});
 });
