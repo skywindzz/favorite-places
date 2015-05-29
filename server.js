@@ -209,4 +209,4 @@ app.delete('/api/places/:placeId', requireAuth, function(req, res) {
 	});
 });
 
-app.listen(8080);
+app.listen(process.env.EXPRESS_PORT || 8080);
