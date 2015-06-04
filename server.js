@@ -6,6 +6,8 @@ var session = require('express-session');
 var LocalStrategy = require('passport-local').Strategy;
 var TwitterStrategy = require('passport-twitter').Strategy;
 
+var EmailService = require('./EmailService');
+
 var Place = require('./models/Place');
 var User = require('./models/User');
 
@@ -44,10 +46,11 @@ passport.use(new TwitterStrategy({
 			user.twitter.token = token;
 			user.twitter.tokenSecret = tokenSecret;
 			user.save(function(err, new_user) {
-				if (err) {
-					console.log("can't create user", err);
+				if (!err) {
+					return done(null, new_user);
 				}
-				done(null, new_user);
+				done(err);
+				console.log("can't create user", err);
 			});
 		}
 		//check to see if token/tokenSecret have changed and save if necessary
@@ -103,8 +106,18 @@ app.post('/api/users', function(req, res) {
 		user.save(function(err, new_user) {
 			if (err) {
 				console.log("can't create user", err);
+				return res.status(500).end();
 			}
-			res.json(new_user);
+
+			//alert admin that we have a new user
+			EmailService.send("Cahlan Sharp <cahlan@gmail.com>", "Cahlan Sharp <cahlan@devmounta.in>", "New user registered!", "A new user registered on the favorite-places app.\n\n"+
+					"name: \n"+new_user.name+"\n"+
+					"email: \n"+new_user.email);
+
+			//send confirmation email to user
+			EmailService.send(new_user.name+" <"+new_user.email+">", "Cahlan Sharp <cahlan@devmounta.in>", "Thanks for signing up!", "Thanks for signing up for my app.");
+			
+			return res.json(new_user);
 		});
 	})
 });
