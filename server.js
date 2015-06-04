@@ -11,7 +11,12 @@ var EmailService = require('./EmailService');
 var Place = require('./models/Place');
 var User = require('./models/User');
 
-mongoose.connect('mongodb://localhost/favorite-places');
+var uristring =
+process.env.MONGOLAB_URI ||
+process.env.MONGOHQ_URL ||
+'mongodb://localhost/favorite-places';
+
+mongoose.connect(uristring);
 
 passport.use(new LocalStrategy({
 	usernameField: 'email'
