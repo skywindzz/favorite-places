@@ -12,6 +12,14 @@ app.config(function($routeProvider, $httpProvider) {
 	}).when('/signup', {
 		templateUrl: '/templates/signup.html',
 		controller: 'SignupCtrl'
+	}).when('/profile', {
+		templateUrl: '/templates/profile.html',
+		controller: 'ProfileCtrl',
+		resolve: {
+			me: function(UsersService) {
+				return UsersService.me();
+			}
+		}
 	}).when('/login', {
 		templateUrl: '/templates/login.html',
 		controller: 'LoginCtrl'

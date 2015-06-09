@@ -1,5 +1,18 @@
 angular.module('FavoritePlaces').service('UsersService', function($http, $q) {
 
+	this.me = function() {
+		var deferred = $q.defer();
+		$http({
+			method: 'GET',
+			url: '/api/users/me'
+		}).then(function(res) {
+			deferred.resolve(res.data);
+		}).catch(function(res) {
+			deferred.reject(res.data);
+		});
+		return deferred.promise;
+	};
+
 	this.signup = function(email, password) {
 		var deferred = $q.defer();
 		$http({

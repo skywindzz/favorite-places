@@ -5,6 +5,16 @@ var passport = require('passport');
 var session = require('express-session');
 var LocalStrategy = require('passport-local').Strategy;
 var TwitterStrategy = require('passport-twitter').Strategy;
+var fs = require('fs');
+var multer = require('multer');
+//https://github.com/aws/aws-sdk-js
+var aws = require('aws-sdk');
+
+aws.config.update({
+	accessKeyId: process.env.AWS_ACCESS_KEY,
+	secretAccessKey: process.env.AWS_SECRET_KEY,
+	region: 'us-west-1'
+});
 
 var EmailService = require('./EmailService');
 
@@ -95,6 +105,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.static(__dirname+"/public"));
 app.use(bodyParser.json());
+app.use(multer({ dest: './tmp/'}));
 
 app.post('/api/users', function(req, res) {
 	User.findOne({ email: req.body.email }).exec().then(function(user) {
@@ -159,6 +170,39 @@ app.post('/api/users/me/favorite_places', requireAuth, function(req, res) {
 			});
 		});
 	});
+});
+
+app.post('/api/users/me/profile_picture', requireAuth, function(req, res) {
+	var file = req.files.photo;
+
+	var s3_filename = req.user._id+'.'+file.extension;
+	var s3_bucket_name = 'favorite-places-cahlan';
+	var s3bucket = new aws.S3();
+
+	fs.readFile(file.path, function(err, file_buffer) {
+		var params =  {
+			Bucket: s3_bucket_name, //folder name in amazon
+			Key: s3_filename, //filename in amazon
+			Body: file_buffer,
+			ACL: 'public-read',
+			ContentType: file.mimetype
+		};
+		s3bucket.putObject(params, function(s3_err, response) {
+			console.log(response);
+			User.findOneAndUpdate({_id: req.user._id}, {profile_picture: s3_bucket_name+'/'+s3_filename}, function() {
+				return res.status(200).end();
+			});
+		});
+	});
+
+
+	//below if you want to save on your machine/server
+	//var public_path = '/img/profiles/'+req.user._id+'.'+file.extension;
+	// fs.rename(file.path, './public'+public_path, function() {
+	// 	User.findOneAndUpdate({_id: req.user._id}, {profile_picture: public_path}, function() {
+	// 		return res.status(200).end();
+	// 	});
+	// });
 });
 
 app.get('/api/users/me', requireAuth, function(req, res) {

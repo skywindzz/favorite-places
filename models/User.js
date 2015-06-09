@@ -12,6 +12,7 @@ var userSchema = new Schema({
 		tokenSecret: String
 	},
 	password: String,
+	profile_picture: String,
 	favorite_places: [{type: Schema.Types.ObjectId, ref: 'Place'}]//referenced model
 });
 
